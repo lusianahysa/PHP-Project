@@ -230,28 +230,6 @@ nav.landing-nav {
     repeating-linear-gradient(90deg, transparent 0px, transparent 119px, rgba(200,255,0,.055) 120px, rgba(200,255,0,.055) 121px),
     repeating-linear-gradient(0deg,  transparent 0px, transparent 59px,  rgba(200,255,0,.035) 60px,  rgba(200,255,0,.035) 61px);
 }
-.road {
-  position:absolute; bottom:0; left:50%; transform:translateX(-50%);
-  width:320px; height:100%; overflow:hidden;
-}
-.road::before, .road::after {
-  content:''; position:absolute; left:50%; bottom:0; width:4px; height:200%;
-  background:repeating-linear-gradient(to top, var(--neon) 0, var(--neon) 40px, transparent 40px, transparent 80px);
-}
-.road::before { transform:translateX(-60px); animation:roadA 1s linear infinite; }
-.road::after  { transform:translateX( 60px); animation:roadB 1s linear infinite; }
-@keyframes roadA{from{transform:translateX(-60px) translateY(0)}to{transform:translateX(-60px) translateY(80px)}}
-@keyframes roadB{from{transform:translateX( 60px) translateY(0)}to{transform:translateX( 60px) translateY(80px)}}
-
-.beam {
-  position:absolute; top:-20%; width:2px; height:60%;
-  background:linear-gradient(to bottom, rgba(200,255,0,.3), transparent);
-  animation:beamFloat 6s ease-in-out infinite;
-}
-.beam:nth-child(1){left:25%;animation-delay:0s}
-.beam:nth-child(2){left:50%;animation-delay:2s;opacity:.5}
-.beam:nth-child(3){left:75%;animation-delay:4s}
-@keyframes beamFloat{0%,100%{opacity:.3;transform:scaleX(1)}50%{opacity:.7;transform:scaleX(3)}}
 
 .spots-overlay {
   position:absolute; top:0; right:0; width:45%; height:100%;
@@ -432,16 +410,16 @@ footer { padding:72px 60px 36px; background:var(--dark); border-top:1px solid rg
   z-index: 1000;
 }
 #page-dashboard .header-logo {
-  font-size: 22px; font-weight: 600; color: var(--sidebar-dark);
+  font-size: 24px; font-weight: 900; color: var(--sidebar-dark);
   display: flex; align-items: center; gap: 8px;
 }
-#page-dashboard .header-logo i { color: var(--teal); }
+#page-dashboard .header-logo i { color: var(--teal); font-size: 28px; }
 #page-dashboard .header-right {
   display: flex; align-items: center; gap: 20px;
   font-weight: 600; font-size: 13px; color: var(--text-dark);
 }
 #page-dashboard .header-right .bell {
-  font-size: 18px; color: var(--text-grey); padding: 0 15px;
+  font-size: 18px; color: var(--teal); padding: 0 15px;
   border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color);
   cursor: pointer; position: relative;
 }
@@ -455,6 +433,16 @@ footer { padding:72px 60px 36px; background:var(--dark); border-top:1px solid rg
   display: flex; align-items: center; gap: 8px; cursor: pointer;
 }
 #page-dashboard .user-profile i { color: var(--teal); }
+.user-profile {
+    transition: opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-profile:hover {
+    opacity: 0.7; /* I jep një efekt klikimi */
+}
 
 /* SIDEBAR */
 #page-dashboard .sidebar {
@@ -740,3 +728,138 @@ footer { padding:72px 60px 36px; background:var(--dark); border-top:1px solid rg
   opacity: 0; transition: .3s; pointer-events: none; z-index: 1000; white-space: nowrap;
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+
+/* =========================================================
+   QENDËRZIMI I SEKSIONIT KRYESOR (HERO) - PËR LAPTOP & TELEFON
+   ========================================================= */
+
+.hero-content {
+    margin: 0 auto !important;
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 900px !important;
+    position: relative;
+    z-index: 10;
+}
+
+.hero-ctas {
+    justify-content: center !important;
+    width: 100%;
+}
+
+.hero-stats {
+    justify-content: center !important;
+    width: 100%;
+}
+
+/* =========================================================
+   RRITJA DRASTIKE E SHKRONJAVE VETËM PËR TELEFONA (TOUCH SCREENS)
+   ========================================================= */
+@media (hover: none) and (pointer: coarse) {
+    
+    /* 1. Menuja Lart (Log in, Register, About, Services) */
+    .nav-links li a {
+        font-size: 38px !important;
+        font-weight: 700 !important;
+        padding: 15px 10px !important;
+    }
+    .btn-login, .btn-signup {
+        font-size: 32px !important;
+        padding: 20px 40px !important;
+        border-radius: 8px !important;
+    }
+
+    /* 2. Titujt dhe Tekstet Kryesore (Landing Page) */
+    .hero-title {
+        font-size: 9rem !important;
+        line-height: 1;
+    }
+    .hero-sub {
+        font-size: 34px !important;
+        line-height: 1.4;
+    }
+    .section-title {
+        font-size: 5.5rem !important;
+    }
+    .about-text, .feature-desc, .price-features li {
+        font-size: 30px !important;
+        line-height: 1.5;
+    }
+
+    /* 3. Header-i dhe Menuja e Dashboard (Kur Logohesh) */
+    .left-text {
+        font-size: 34px !important;
+    }
+    .profile-name h1 {
+        font-size: 4.5rem !important;
+    }
+    .link-item {
+        font-size: 26px !important;
+    }
+
+    /* 4. Footeri në fund fare (Rregulluar për t'u barazuar) */
+    .footer-col h4 {
+        font-size: 36px !important; 
+        margin-bottom: 25px !important;
+    }
+    .footer-col ul li a {
+        font-size: 26px !important; 
+        padding: 12px 0;
+        display: inline-block;
+    }
+    .footer-tagline, .footer-bottom span {
+        font-size: 26px !important; 
+    }
+
+    /* 5. ZMADHIMI I DRITARES SË LOGIMIT */
+    .auth-box {
+        width: 800px !important;
+        max-width: 90% !important;
+        padding: 60px !important;
+    }
+    .auth-logo {
+        font-size: 60px !important;
+        margin-bottom: 30px !important;
+    }
+    .auth-tabs {
+        margin-bottom: 40px !important;
+    }
+    .auth-tab {
+        font-size: 32px !important;
+        padding: 20px !important;
+    }
+    .auth-form .form-group label {
+        font-size: 28px !important;
+        margin-bottom: 12px !important;
+    }
+    .auth-form .form-group input {
+        font-size: 32px !important;
+        padding: 24px !important;
+        height: auto !important;
+        border-radius: 8px !important;
+    }
+    .auth-submit {
+        font-size: 36px !important;
+        padding: 25px !important;
+        margin-top: 20px !important;
+        border-radius: 8px !important;
+    }
+    .auth-switch, .auth-switch a {
+        font-size: 26px !important;
+        margin-top: 30px !important;
+    }
+
+    /* 6. Zmadhimi i indikatorit vertikal anash (LIVE SPOTS) */
+    .live-ticker {
+        font-size: 22px !important; 
+        padding: 20px 15px !important; 
+        letter-spacing: 4px !important; 
+        right: 15px !important; 
+        transform-origin: right center !important;
+    }
+
+}

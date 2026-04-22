@@ -46,17 +46,29 @@ if ($is_logged_in) {
 // ── Count stats ───────────────────────────────────────────────────────────────
 $total_spots    = count($db_spots);
 $free_spots     = count(array_filter($db_spots, fn($s) => $s['status'] === 'available'));
+$reserved_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'reserved'));
 $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occupied'));
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Parkster — Park Smarter</title>
+<meta name="viewport" content="width=1280">
+
+<title>Parkster</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="assets/style.css">
+
+<style>
+    .beam { 
+        display: none !important; 
+        opacity: 0 !important; 
+        visibility: hidden !important; 
+        height: 0 !important;
+        width: 0 !important;
+    }
+</style>
 </head>
 <body
   class="<?= $is_logged_in ? '' : 'landing-mode' ?>"
@@ -65,6 +77,9 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
   data-force-register="<?= $force_register_view ? 'true' : 'false' ?>"
   data-spots='<?= $spots_json ?>'
   data-total-spots="<?= $total_spots ?>"
+  data-free-spots="<?= $free_spots ?>"
+  data-reserved-spots="<?= $reserved_spots ?>"
+  data-occupied-spots="<?= $occupied_spots ?>"
 >
 
 <div class="cursor" id="cursor"></div>
@@ -77,8 +92,8 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
     <div class="auth-subtitle">Smart Parking System</div>
 
     <div class="auth-tabs">
-      <button class="auth-tab" id="tabLogin" onclick="switchTab('login')">Sign In</button>
-      <button class="auth-tab" id="tabRegister" onclick="switchTab('register')">Create Account</button>
+      <button class="auth-tab" id="tabLogin" onclick="switchTab('login')">Log In</button>
+      <button class="auth-tab" id="tabRegister" onclick="switchTab('register')">Register</button>
     </div>
 
     <div class="auth-form" id="formLogin">
@@ -94,9 +109,9 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
           <label>Password</label>
           <input type="password" name="password" placeholder="••••••••" required>
         </div>
-        <button type="submit" class="auth-submit">Sign In &rarr; Dashboard</button>
+        <button type="submit" class="auth-submit">Log In &rarr; Dashboard</button>
       </form>
-      <div class="auth-switch">No account? <a onclick="switchTab('register')">Create one free</a></div>
+      <div class="auth-switch">No account? <a onclick="switchTab('register')">Register for free</a></div>
     </div>
 
     <div class="auth-form" id="formRegister">
@@ -122,15 +137,15 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
           <label>Password</label>
           <input type="password" name="password" placeholder="Min. 8 characters" required>
         </div>
-        <button type="submit" class="auth-submit">Create Account &rarr; Get Started</button>
+        <button type="submit" class="auth-submit">Register &rarr; Get Started</button>
       </form>
-      <div class="auth-switch">Already have an account? <a onclick="switchTab('login')">Sign in</a></div>
+      <div class="auth-switch">Already have an account? <a onclick="switchTab('login')">Log in</a></div>
     </div>
   </div>
 </div>
 
 <div id="page-landing">
-  <div class="live-ticker"><div class="ticker-dot"></div> LIVE — <span id="liveSpots">24</span> Spots Free</div>
+  <div class="live-ticker"><div class="ticker-dot"></div> LIVE — <span id="liveSpots"><?= $free_spots ?></span> Spots Free</div>
   <nav class="landing-nav">
     <div class="nav-logo"><i class="fa-solid fa-gem"></i> PARK<span>STER</span></div>
     <ul class="nav-links">
@@ -139,15 +154,14 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
       <li><a href="#pricing">Pricing</a></li>
     </ul>
     <div class="nav-btns">
-      <button class="btn-login" onclick="openAuth('login')">Sign In</button>
-      <button class="btn-signup" onclick="openAuth('register')">Get Started</button>
+      <button class="btn-login" onclick="openAuth('login')">Log In</button>
+      <button class="btn-signup" onclick="openAuth('register')">Register</button>
     </div>
   </nav>
 
   <section class="hero">
     <div class="hero-bg">
       <div class="grid-floor"></div>
-      <div class="beam"></div><div class="beam"></div><div class="beam"></div>
       <div class="road"></div>
       <div class="spots-overlay">
         <div class="spot-cell"></div><div class="spot-cell occupied"></div>
@@ -167,8 +181,8 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
       </div>
       <div class="hero-stats">
         <div class="stat"><div class="stat-num" id="statSpots">0</div><div class="stat-label">Total Spots</div></div>
-        <div class="stat"><div class="stat-num" id="statFree">24</div><div class="stat-label">Available Now</div></div>
-        <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">Always Open</div></div>
+        <div class="stat"><div class="stat-num" id="statFree"><?= $free_spots ?></div><div class="stat-label">Available Now</div></div>
+        <div class="stat"><div class="stat-num" id="statOccupied"><?= $occupied_spots ?></div><div class="stat-label">Occupied</div></div>
       </div>
     </div>
   </section>
@@ -214,12 +228,12 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
       <div class="neon-divider"></div>
       <p class="about-text">Parkster is the leading intelligent parking management company in Albania. With our advanced technology, we have transformed the way people find and use parking spaces — making every journey seamless.</p>
       <ul class="info-list">
-        <li class="info-item"><strong>Address:</strong> Parking Street 1, Tirana / Durrës</li>
-        <li class="info-item"><strong>Phone:</strong> +355 69 XXX XXXX</li>
+        <li class="info-item"><strong>Address:</strong> Parking Street 1, Tirana, Albania</li>
+        <li class="info-item"><strong>Phone:</strong> +355 69 123 4567</li>
         <li class="info-item"><strong>Email:</strong> info@parkster.al</li>
-        <li class="info-item"><strong>Hours:</strong> Open 24 hours, 7 days a week</li>
-        <li class="info-item"><strong>Capacity:</strong> 240+ parking spots</li>
-        <li class="info-item"><strong>Founded:</strong> 2024 — Albania</li>
+        <li class="info-item"><strong>Schedule:</strong> Open 24 hours, 7 days a week</li>
+        <li class="info-item"><strong>Capacity:</strong> 100+ parking spots</li>
+        <li class="info-item"><strong>Founded:</strong> 2026 — Albania</li>
       </ul>
       <button class="cta-primary" onclick="openAuth('register')">Get Started Free</button>
     </div>
@@ -246,7 +260,7 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
       </div>
       <div class="pricing-card reveal" style="transition-delay:.2s">
         <div class="price-plan">Monthly VIP</div>
-        <div class="price-amount">12K<span style="font-size:22px">L</span></div>
+        <div class="price-amount">12000<span style="font-size:22px">L</span></div>
         <div class="price-unit">per month</div>
         <ul class="price-features"><li>Dedicated spot</li><li>Free EV charging</li><li>VIP zone access</li><li>Personal manager</li></ul>
         <button class="price-cta" onclick="openAuth('register')">Contact Us</button>
@@ -262,11 +276,11 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
         <p class="footer-tagline">Albania's most advanced intelligent parking system. Tomorrow's technology, today.</p>
       </div>
       <div class="footer-col"><h4>Navigate</h4><ul><li><a href="#features">Services</a></li><li><a href="#about">About</a></li><li><a href="#pricing">Pricing</a></li></ul></div>
-      <div class="footer-col"><h4>Company</h4><ul><li><a href="#">Our Story</a></li><li><a href="#">Partners</a></li><li><a href="#">Careers</a></li><li><a href="#">Press</a></li></ul></div>
-      <div class="footer-col"><h4>Contact</h4><ul><li><a href="#">info@parkster.al</a></li><li><a href="#">+355 69 XXX XXXX</a></li><li><a href="#">Instagram</a></li><li><a href="#">Facebook</a></li></ul></div>
+      <div class="footer-col"><h4>Schedule & Security</h4><ul><li><a style="cursor: default; text-decoration: none;">Open 24/7</a></li><li><a style="cursor: default; text-decoration: none;">HD Security Cameras</a></li><li><a style="cursor: default; text-decoration: none;">On-site Assistance</a></li><li><a style="cursor: default; text-decoration: none;">Optimal Lighting</a></li></ul></div>
+      <div class="footer-col"><h4>Contact</h4><ul><li><a href="#">info@parkster.al</a></li><li><a href="#">+355 69 123 4567</a></li><li><a href="#">Instagram</a></li><li><a href="#">Facebook</a></li></ul></div>
     </div>
     <div class="footer-bottom">
-      <span>&copy; 2025 Parkster Albania. All rights reserved.</span>
+      <span>&copy; 2026 Parkster Albania. All rights reserved.</span>
       <span>Made with &hearts; in Albania</span>
     </div>
   </footer>
@@ -279,14 +293,14 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
             <i class="fa-solid fa-gem"></i> Parkster
         </div>
         <div class="header-right">
-            <a href="functions/logout.php" style="color:var(--text-dark); text-decoration:none; font-size:12px; font-weight:700;">LOGOUT</a>
+            <a href="functions/logout.php" style="color:var(--text-dark); text-decoration:none; font-size:12px; font-weight:700;">LOG OUT</a>
             <span class="bell">
                 <i class="fa-solid fa-bell"></i>
                 <span id="notif-badge" class="notification-dot"></span>
             </span>
-            <div class="user-profile">
-                <span><?= $current_user ? htmlspecialchars($current_user['first_name']) : 'User' ?></span>
-                <i class="fa-solid fa-circle-user" style="font-size: 20px;"></i>
+            <div class="user-profile" onclick="dbView('dash')" style="cursor: pointer;">
+               <span><?= $current_user ? htmlspecialchars($current_user['first_name']) : 'User' ?></span>
+               <i class="fa-solid fa-circle-user" style="font-size: 20px;"></i>
             </div>
         </div>
     </header>
@@ -305,7 +319,7 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
                 <img src="https://ui-avatars.com/api/?name=<?= $current_user ? urlencode($current_user['first_name']) : 'User' ?>&background=1cc7d0&color=fff&size=200" alt="Profile" class="profile-img">
                 <div>
                     <div class="profile-name">
-                        <h1>Hi <?= $current_user ? htmlspecialchars($current_user['first_name']) : 'User' ?></h1>
+                        <h1>Hi, <?= $current_user ? htmlspecialchars($current_user['first_name']) : 'User' ?></h1>
                     </div>
                     <div class="profile-links">
                         <span class="link-item">View Profile <i class="fa-solid fa-circle-info"></i></span> <span>|</span>
@@ -358,7 +372,7 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
 
             <div class="right-column">
                 <div class="jobs-header">
-                    <h2><i class="fa-solid fa-map-location-dot"></i> Sesionet e Parkimit</h2>
+                    <h2><i class="fa-solid fa-map-location-dot"></i> Parking Sessions</h2>
                     <div class="slider-controls">
                         <button id="prevBtn"><i class="fa-solid fa-chevron-left"></i></button>
                         <button id="nextBtn"><i class="fa-solid fa-chevron-right"></i></button>
@@ -374,19 +388,19 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
                                 <div class="no-match-badge" style="color:#777;">COMPLETED</div>
                             </div>
                             <div class="job-body">
-                                <div class="job-company">Historiku</div>
-                                <div class="job-title">Sesion i Mëparshëm Parkimi</div>
-                                <div class="job-location">Sektori A</div>
-                                <div class="open-badge" style="border-color: #888; color: #888;">PAGUAR</div>
+                                <div class="job-company">History</div>
+                                <div class="job-title">Previous Parking Session</div>
+                                <div class="job-location">Sector A</div>
+                                <div class="open-badge" style="border-color: #888; color: #888;">PAID</div>
                                 <div class="status-bars">
                                     <span class="active" style="background: #888;"></span><span class="active" style="background: #888;"></span><span class="active" style="background: #888;"></span><span class="active" style="background: #888;"></span><span class="active" style="background: #888;"></span>
                                 </div>
                                 <div class="job-footer-text">
                                     <i class="fa-solid fa-clock" style="color: #888;"></i>
-                                    <div>Përfunduar më:<br><span style="color:#888; font-size: 11px;">Më herët</span></div>
+                                    <div>Completed on:<br><span style="color:#888; font-size: 11px;">Earlier</span></div>
                                 </div>
                                 <div class="withdraw-btn" style="color: #888; cursor: default; border-top-color:#eaeaea;">
-                                    <i class="fa-solid fa-check-circle" style="color: #888;"></i> Faturuar
+                                    <i class="fa-solid fa-check-circle" style="color: #888;"></i> Invoiced
                                 </div>
                             </div>
                         </div>
@@ -406,53 +420,53 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
                 </div>
 
                 <div id="parking-sidebar">
-                    <div class="sb-header">Parking — Harta Live</div>
+                    <div class="sb-header">Parking — Live Map</div>
                     
                     <div class="sb-section">
                         <div class="stat-row">
-                        <div class="stat"><div class="stat-n g" id="cnt-f">0</div><div class="stat-l">I LIRË</div></div>
-                        <div class="stat"><div class="stat-n y" id="cnt-r">0</div><div class="stat-l">REZERVUAR</div></div>
-                        <div class="stat"><div class="stat-n r" id="cnt-t">0</div><div class="stat-l">I ZËNË</div></div>
+                        <div class="stat"><div class="stat-n g" id="cnt-f">0</div><div class="stat-l">FREE</div></div>
+                        <div class="stat"><div class="stat-n y" id="cnt-r">0</div><div class="stat-l">RESERVED</div></div>
+                        <div class="stat"><div class="stat-n r" id="cnt-t">0</div><div class="stat-l">OCCUPIED</div></div>
                         </div>
                     </div>
 
                     <div class="sb-section">
-                        <h4>Legjenda</h4>
-                        <div class="leg-item"><div class="leg-dot g"></div> I lirë — klik për të zgjedhur</div>
-                        <div class="leg-item"><div class="leg-dot r"></div> I zënë (me makinë)</div>
+                        <h4>Legend</h4>
+                        <div class="leg-item"><div class="leg-dot g"></div> Free — click to select</div>
+                        <div class="leg-item"><div class="leg-dot r"></div> Occupied (car present)</div>
                     </div>
 
                     <div class="sb-section" style="flex:1; overflow-y:auto;">
-                        <h4>Vendi i zgjedhur</h4>
-                        <div id="sel-empty">Kliko një vend<br>të lirë në hartë</div>
+                        <h4>Selected Spot</h4>
+                        <div id="sel-empty">Click a free spot<br>on the map</div>
                         <div id="sel-info" style="display:none;">
                             <div style="margin-bottom:12px;">
                                 <div class="sel-id" id="si-id">—</div>
                                 <div class="sel-type" id="si-type">—</div>
                             </div>
-                            <div class="info-row"><span class="lbl">Statusi</span><span class="val g" id="si-status">I lirë</span></div>
-                            <div class="info-row"><span class="lbl">Çmimi/orë</span><span class="val" id="si-rate">150 L</span></div>
+                            <div class="info-row"><span class="lbl">Status</span><span class="val g" id="si-status">Free</span></div>
+                            <div class="info-row"><span class="lbl">Rate/hour</span><span class="val" id="si-rate">150 L</span></div>
                             <div style="margin:12px 0 8px;">
-                                <h4 style="font-size:10px;font-weight:600;color:#555;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">Kohëzgjatja</h4>
+                                <h4 style="font-size:10px;font-weight:600;color:#555;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">Duration</h4>
                                 <div class="dur-row" id="dur-row">
-                                    <button class="dur active" data-h="1">1 orë</button>
-                                    <button class="dur" data-h="2">2 orë</button>
-                                    <button class="dur" data-h="3">3 orë</button>
-                                    <button class="dur" data-h="6">6 orë</button>
-                                    <button class="dur" data-h="12">12 orë</button>
-                                    <button class="dur" data-h="24">24 orë</button>
+                                    <button class="dur active" data-h="1">1 hr</button>
+                                    <button class="dur" data-h="2">2 hrs</button>
+                                    <button class="dur" data-h="3">3 hrs</button>
+                                    <button class="dur" data-h="6">6 hrs</button>
+                                    <button class="dur" data-h="12">12 hrs</button>
+                                    <button class="dur" data-h="24">24 hrs</button>
                                 </div>
                             </div>
                             <div class="price-box" id="price-box">
-                                <div class="price-row"><span>Çmim/orë</span><span id="pr-rate">—</span></div>
-                                <div class="price-row"><span>Kohëzgjatja</span><span id="pr-dur">—</span></div>
-                                <div class="price-row"><span>Tarifë Baze</span><span>20 L</span></div>
+                                <div class="price-row"><span>Rate/hour</span><span id="pr-rate">—</span></div>
+                                <div class="price-row"><span>Duration</span><span id="pr-dur">—</span></div>
+                                <div class="price-row"><span>Base Fee</span><span>20 L</span></div>
                                 <div class="price-total"><span class="tlbl">Total</span><span class="tval" id="pr-total">—</span></div>
                             </div>
                         </div>
                     </div>
 
-                    <button id="pay-btn" style="display:none;" onclick="doPay()">Konfirmo &amp; Paguaj</button>
+                    <button id="pay-btn" style="display:none;" onclick="doPay()">Confirm &amp; Pay</button>
                     <div class="times" id="times-box" style="display:none">
                         Check-in: <span id="t-in">—</span><br>
                         Check-out: <span id="t-out">—</span>
