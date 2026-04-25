@@ -384,3 +384,20 @@ prevBtn?.addEventListener('click', () => {
         sliderTrack.style.transform = `translateX(-${position * itemWidth}px)`;
     }
 });
+
+function previewAndSubmit(event) {
+    const file = event.target.files[0];
+    
+    if (file) {
+        // 1. Shfaq foton e re menjëherë në ekran (Preview)
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('profilePreview').src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+
+        // 2. Dërgo formën automatikisht tek Backend-i
+        // (Opsionale: mund ta heqësh këtë rresht nëse do që përdoruesi të shtypë një buton "Save")
+        document.getElementById('profilePicForm').submit();
+    }
+}

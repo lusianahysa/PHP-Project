@@ -38,9 +38,30 @@ unset($_SESSION['login_error'], $_SESSION['register_error']);
 // ── Fetch logged-in user's name ──────────────────────────────────────────────
 $current_user = null;
 if ($is_logged_in) {
-  $stmt = $pdo->prepare('SELECT first_name, last_name, email FROM users WHERE id = ?');
+  // SHTUAM: profile_image_url në listën e SELECT
+  $stmt = $pdo->prepare('SELECT first_name, last_name, email, phone_number, profile_image_url FROM users WHERE id = ?');
   $stmt->execute([$_SESSION['user_id']]);
   $current_user = $stmt->fetch();
+}
+
+// Sigurohu që ky kod është PAS lidhjes me databazën ($pdo) dhe PAS marrjes së $current_user
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
+    $new_email = trim($_POST['new_email']);
+    $new_phone = trim($_POST['new_phone']);
+    $user_id = $_SESSION['user_id'];
+
+    try {
+        // Përditësojmë të dhënat në databazë duke përdorur $pdo
+        $update_stmt = $pdo->prepare('UPDATE users SET email = ?, phone_number = ? WHERE id = ?');
+        $update_stmt->execute([$new_email, $new_phone, $user_id]);
+        
+        // Rifreskojmë faqen që ndryshimet të shfaqen menjëherë
+        header("Location: index.php?profile_updated=success");
+        exit;
+    } catch (PDOException $e) {
+        $error_msg = "Error updating profile. ";
+    }
 }
 
 // ── Count stats ───────────────────────────────────────────────────────────────
@@ -430,25 +451,56 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
         <li id="nav-parking" onclick="dbView('parking')"><i class="fa-solid fa-map-location-dot"></i> <span class="left-text">Parking</span></li>
       </ul>
     </aside>
-
-    <main class="main-content">
-
-      <div class="profile-banner">
-        <div class="profile-left">
-          <img src="https://ui-avatars.com/api/?name=<?= $current_user ? urlencode($current_user['first_name']) : 'User' ?>&background=1cc7d0&color=fff&size=200" alt="Profile" class="profile-img">
-          <div>
-            <div class="profile-name">
-              <h1>Hi, <?= $current_user ? htmlspecialchars($current_user['first_name']) : 'User' ?></h1>
-            </div>
-            <div class="profile-links">
-              <span class="link-item">View Profile <i class="fa-solid fa-circle-info"></i></span> <span>|</span>
-              <span class="link-item"><?= $current_user ? htmlspecialchars($current_user['email']) : 'email@example.com' ?> <i class="fa-solid fa-circle-info"></i></span> <span>|</span>
-              <span class="link-item">Albania | AL <i class="fa-solid fa-circle-info"></i></span>
-            </div>
-          </div>
+ <main class="main-content">
+   <div class="profile-banner">
+  <div class="profile-left">
+    
+    <div style="position: relative; width: 200px; height: 200px; margin-right: 20px;">
+      
+      <div class="profile-image-wrapper" 
+           style="position: relative; cursor: pointer; border-radius: 50%; overflow: hidden; width: 100%; height: 100%;" 
+           onclick="document.getElementById('profilePicInput').click()">
+        
+        <img id="profilePreview" 
+     src="<?= !empty($current_user['profile_image_url']) ? 'uploads/profiles/'.$current_user['profile_image_url'].'?v='.time() : 'https://ui-avatars.com/api/?name='.urlencode($current_user['first_name']).'&background=1cc7d0&color=fff&size=200' ?>" 
+     alt="Profile" 
+     class="profile-img" 
+     style="display: block; width: 100%; height: 100%; object-fit: cover;">
+        
+        <div class="image-overlay">
+          <i class="fa-solid fa-camera"></i>
         </div>
       </div>
 
+      <?php if (!empty($current_user['profile_image_url'])): ?>
+        <a href="functions/remove_photo.php" class="delete-photo-icon" title="Remove photo" onclick="return confirm('Are you sure you want to remove your profile photo?')">
+          <i class="fa-solid fa-circle-xmark"></i>
+        </a>
+      <?php endif; ?>
+    </div>
+
+    <form id="profilePicForm" action="functions/upload_profile.php" method="POST" enctype="multipart/form-data" style="display: none;">
+      <input type="file" id="profilePicInput" name="profile_image" accept="image/png, image/jpeg, image/jpg" onchange="previewAndSubmit(event)">
+    </form>
+
+    <div>
+      <div class="profile-name">
+        <h1>Hi, <?= $current_user ? htmlspecialchars($current_user['first_name']) : 'User' ?></h1>
+      </div>
+      <div class="profile-links">
+        <span class="link-item"><?= htmlspecialchars($current_user['phone_number'] ?? 'Shto numrin e tel') ?> <i class="fa-solid fa-phone"></i></span> <span>|</span>
+        <span class="link-item"><?= $current_user ? htmlspecialchars($current_user['email']) : 'email@example.com' ?> <i class="fa-solid fa-circle-info"></i></span> <span>|</span>
+        <span style="cursor: default; ">Albania | AL <i class="fa-solid fa-location-dot"></i></span>
+      </div>
+      <div class="profile-actions" style="margin-top: 15px;">
+        <button onclick="openModal()" class="btn-edit" style="padding: 6px 16px; background: #1cc7d0; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+          Edit Profile <i class="fa-solid fa-pen" style="margin-left: 5px;"></i>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
       <hr class="main-divider">
 
       <div id="view-dashboard" class="dashboard-grid">
@@ -611,6 +663,50 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
     </main>
 
   </div>
+
+
+  <div id="editProfileModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 30px; border-radius: 10px; width: 350px; position: relative;">
+        <span onclick="closeModal()" style="position: absolute; top: 15px; right: 20px; font-size: 20px; cursor: pointer; color: #333;">&times;</span>
+        
+        <h2 style="margin-top: 0; color: #333; font-size: 20px; margin-bottom: 20px;">Edit Profile</h2>
+        
+        <form method="POST" action="">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: #555; font-size: 14px;">New Email:</label>
+                <input type="email" name="new_email" value="<?= htmlspecialchars($current_user['email']) ?>" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; color: #555; font-size: 14px;">Phone Number:</label>
+                <input type="text" name="new_phone" value="<?= htmlspecialchars($current_user['phone_number'] ?? '') ?>" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
+            </div>
+            
+            <button type="submit" name="update_profile" style="width: 100%; padding: 10px; background: #1cc7d0; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                Save Changes
+            </button>
+        </form>
+    </div>
+</div>
+
+
+<script>
+// Funksionet e reja në anglisht
+function openModal() {
+    document.getElementById('editProfileModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('editProfileModal').style.display = 'none';
+}
+
+window.onclick = function(event) {
+    var modal = document.getElementById('editProfileModal');
+    if (event.target === modal) {
+        closeModal();
+    }
+}
+</script>
 
   <script src="assets/app.js"></script>
 </body>

@@ -9,68 +9,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password    = $_POST['password'];
     $phone       = trim($_POST['phone_number'] ?? '');
 
-    // ── 1. Validimi i passwordit ──────────────────────────────────────────
+    // ── 1. Password Validation ──────────────────────────────────────────
     $pwd_errors = [];
 
     if (strlen($password) < 8) {
-        $pwd_errors[] = 'të paktën 8 karaktere';
+        $pwd_errors[] = 'at least 8 characters';
     }
     if (!preg_match('/[A-Z]/', $password)) {
-        $pwd_errors[] = 'të paktën 1 shkronjë të madhe (A-Z)';
+        $pwd_errors[] = 'at least 1 uppercase letter (A-Z)';
     }
     if (!preg_match('/[a-z]/', $password)) {
-        $pwd_errors[] = 'të paktën 1 shkronjë të vogël (a-z)';
+        $pwd_errors[] = 'at least 1 lowercase letter (a-z)';
     }
     if (!preg_match('/[0-9]/', $password)) {
-        $pwd_errors[] = 'të paktën 1 numër (0-9)';
+        $pwd_errors[] = 'at least 1 number (0-9)';
     }
     if (!preg_match('/[\W_]/', $password)) {
-        $pwd_errors[] = 'të paktën 1 simbol (!, @, #, $, ...)';
+        $pwd_errors[] = 'at least 1 special character (!, @, #, $, ...)';
     }
 
     if (!empty($pwd_errors)) {
-        $_SESSION['register_error'] = 'Fjalëkalimi duhet të përmbajë: ' . implode(', ', $pwd_errors) . '.';
+        $_SESSION['register_error'] = 'Password must contain: ' . implode(', ', $pwd_errors) . '.';
         header("Location: ../index.php?show_register=true");
         exit;
     }
 
-    // ── 2. Validimi i emailit (format + DNS) ─────────────────────────────
+    // ── 2. Email Validation (Format + DNS) ─────────────────────────────
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $_SESSION['register_error'] = 'Formati i emailit është i pavlefshëm.';
+        $_SESSION['register_error'] = 'Invalid email format.';
         header("Location: ../index.php?show_register=true");
         exit;
     }
 
-    // Merr domain-in e emailit dhe kontrollo nëse ka MX ose A record
+    // Get email domain and check for MX or A records
     $emailDomain = substr(strrchr($email, '@'), 1);
 
     if (!checkdnsrr($emailDomain, 'MX') && !checkdnsrr($emailDomain, 'A')) {
-        $_SESSION['register_error'] = 'Emaili "' . htmlspecialchars($email) . '" nuk ekziston. Ju lutem vendosni një email të vërtetë.';
+        $_SESSION['register_error'] = 'The email "' . htmlspecialchars($email) . '" does not appear to be real. Please enter a valid email.';
         header("Location: ../index.php?show_register=true");
         exit;
     }
 
-    // ── 3. Validimi i numrit të telefonit ────────────────────────────────
+    // ── 3. Phone Number Validation ────────────────────────────────
     if (!empty($phone) && !preg_match('/^\+?[0-9\s\-]{7,15}$/', $phone)) {
-        $_SESSION['register_error'] = 'Numri i telefonit është i pavlefshëm. Shembull: +355 69 123 4567';
+        $_SESSION['register_error'] = 'Invalid phone number format. Example: +355 69 123 4567';
         header("Location: ../index.php?show_register=true");
         exit;
     }
 
-    // ── 4. Kontrollo nëse emaili ekziston tashmë ─────────────────────────
+    // ── 4. Check if email already exists ─────────────────────────
     $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
     $stmt->execute([$email]);
 
     if ($stmt->fetch()) {
-        $_SESSION['register_error'] = 'Ky email ekziston tashmë! Ju lutem provoni një tjetër.';
+        $_SESSION['register_error'] = 'This email is already registered! Please try logging in or use another one.';
         header("Location: ../index.php?show_register=true");
         exit;
     }
 
-    // ── 5. Hash passwordin para ruajtjes ─────────────────────────────────
+    // ── 5. Hash password before saving ─────────────────────────────────
     $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
-    // ── 6. Inserto userin ─────────────────────────────────────────────────
+    // ── 6. Insert User ─────────────────────────────────────────────────
     $stmt = $pdo->prepare('
         INSERT INTO users (first_name, last_name, email, password, phone_number, role) 
         VALUES (?, ?, ?, ?, ?, ?)
@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: ../index.php");
         exit;
     } else {
-        $_SESSION['register_error'] = 'Ndodhi një gabim gjatë regjistrimit. Ju lutem provoni përsëri.';
+        $_SESSION['register_error'] = 'An error occurred during registration. Please try again later.';
         header("Location: ../index.php?show_register=true");
         exit;
     }
