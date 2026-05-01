@@ -74,3 +74,19 @@ SELECT 'B' || i FROM generate_series(1, 18) AS i;
 -- Generate 18 parking spots for Sector C (C1, C2... C18)
 INSERT INTO parking_spots (spot_number)
 SELECT 'C' || i FROM generate_series(1, 18) AS i;
+
+
+-- Remove the requirement for a password (Google users do not have a local password)
+ALTER TABLE users ALTER COLUMN password DROP NOT NULL;
+
+-- Add a column to track the registration method ('local' for email/password, 'google' for OAuth)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20) DEFAULT 'local';
+
+-- Store the unique Google account ID to prevent fake profiles and link accounts correctly
+ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE;
+
+-- Add phone number column
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20);
+
+-- Add profile image URL column
+ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image_url VARCHAR(255);
