@@ -1,3 +1,11 @@
+// ═══════════════════════════════════════════════════════════════════════════
+//  PARKSTER — app.js
+//  • Landing page animations
+//  • Auth modal
+//  • Dashboard / Parking map
+//  • PayPal payment + reserve.php DB sync
+// ═══════════════════════════════════════════════════════════════════════════
+
 const IS_LOGGED_IN    = document.body.dataset.loggedIn === 'true';
 const HAS_LOGIN_ERR   = document.body.dataset.loginErr === 'true';
 const FORCE_REGISTER  = document.body.dataset.forceRegister === 'true';
@@ -23,40 +31,47 @@ document.getElementById('page-dashboard').style.display = IS_LOGGED_IN ? 'block'
 if (!IS_LOGGED_IN && FORCE_REGISTER) openAuth('register');
 else if (!IS_LOGGED_IN && HAS_LOGIN_ERR) openAuth('login');
 
-// ── Custom cursor (landing) ───────────────────────
+// ── Custom cursor (landing only) ──────────────────────────────────────────────
 if (!IS_LOGGED_IN) {
   const cur = document.getElementById('cursor');
   const rng = document.getElementById('cursorRing');
   let mx=0,my=0,rx=0,ry=0;
-  document.addEventListener('mousemove',e=>{ mx=e.clientX;my=e.clientY; cur.style.left=(mx-6)+'px'; cur.style.top=(my-6)+'px'; });
-  (function loop(){ rx+=(mx-rx-18)*.12; ry+=(my-ry-18)*.12; rng.style.left=rx+'px'; rng.style.top=ry+'px'; requestAnimationFrame(loop); })();
-  document.querySelectorAll('button,a').forEach(el=>{
-    el.addEventListener('mouseenter',()=>{ cur.style.transform='scale(2.5)'; rng.style.transform='scale(1.5)'; rng.style.opacity='.8'; });
-    el.addEventListener('mouseleave',()=>{ cur.style.transform=''; rng.style.transform=''; rng.style.opacity='.5'; });
+  document.addEventListener('mousemove', e => {
+    mx=e.clientX; my=e.clientY;
+    cur.style.left=(mx-6)+'px'; cur.style.top=(my-6)+'px';
+  });
+  (function loop(){
+    rx+=(mx-rx-18)*.12; ry+=(my-ry-18)*.12;
+    rng.style.left=rx+'px'; rng.style.top=ry+'px';
+    requestAnimationFrame(loop);
+  })();
+  document.querySelectorAll('button,a').forEach(el => {
+    el.addEventListener('mouseenter', () => { cur.style.transform='scale(2.5)'; rng.style.transform='scale(1.5)'; rng.style.opacity='.8'; });
+    el.addEventListener('mouseleave', () => { cur.style.transform=''; rng.style.transform=''; rng.style.opacity='.5'; });
   });
 }
 
-// ── Scroll reveal ─────────────────────────────────
-new IntersectionObserver((entries)=>{
-  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
-},{threshold:.1}).observe && document.querySelectorAll('.reveal').forEach(r=>{
-  new IntersectionObserver(entries=>entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); }),{threshold:.1}).observe(r);
+// ── Scroll reveal ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.reveal').forEach(r => {
+  new IntersectionObserver(entries => entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('visible');
+  }), { threshold: .1 }).observe(r);
 });
 
-// ── Auth modal ────────────────────────────────────
-function openAuth(tab){
+// ── Auth modal ────────────────────────────────────────────────────────────────
+function openAuth(tab) {
   document.getElementById('authOverlay').classList.add('open');
-  switchTab(tab||'login');
-  document.body.style.overflow='hidden';
+  switchTab(tab || 'login');
+  document.body.style.overflow = 'hidden';
 }
-function closeAuth(){
+function closeAuth() {
   document.getElementById('authOverlay').classList.remove('open');
-  document.body.style.overflow='';
+  document.body.style.overflow = '';
 }
-function switchTab(tab){
-  document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.auth-form').forEach(f=>f.classList.remove('active'));
-  const T=tab.charAt(0).toUpperCase()+tab.slice(1);
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+  const T = tab.charAt(0).toUpperCase() + tab.slice(1);
   document.getElementById('tab'+T).classList.add('active');
   document.getElementById('form'+T).classList.add('active');
 }
@@ -87,30 +102,30 @@ function dbView(v) {
     }
 }
 
-// ── REALISTIC MAP GENERATOR ───────────────────────
-const RATES = { standard: 150 };
-const FEE = 20;
+// ═══════════════════════════════════════════════════════════════════════════
+//  GARAGE MAP
+// ═══════════════════════════════════════════════════════════════════════════
 let selectedSpot = null;
-let duration = 1;
+let duration     = 1;
 
-function carSVG() {
-    const c = '#6aaa50';
-    return `<svg class="car" viewBox="0 0 34 58" xmlns="http://www.w3.org/2000/svg">
-      <rect x="5" y="10" width="24" height="36" rx="4" fill="${c}" opacity=".75"/>
-      <path d="M9 10 L11 4 L23 4 L25 10z" fill="${c}" opacity=".85"/>
-      <path d="M9 46 L11 54 L23 54 L25 46z" fill="${c}" opacity=".75"/>
-      <rect x="9" y="5" width="16" height="7" rx="1" fill="rgba(180,220,255,.35)"/>
-      <rect x="9" y="46" width="16" height="6" rx="1" fill="rgba(150,150,150,.25)"/>
-      <rect x="3" y="12" width="5" height="9" rx="2" fill="#1a1a1a"/>
-      <rect x="26" y="12" width="5" height="9" rx="2" fill="#1a1a1a"/>
-      <rect x="3" y="37" width="5" height="9" rx="2" fill="#1a1a1a"/>
-      <rect x="26" y="37" width="5" height="9" rx="2" fill="#1a1a1a"/>
-      <rect x="6" y="7" width="8" height="2.5" rx="1" fill="rgba(255,60,60,.7)"/>
-      <rect x="20" y="7" width="8" height="2.5" rx="1" fill="rgba(255,60,60,.7)"/>
-      <rect x="6" y="49" width="8" height="2.5" rx="1" fill="rgba(255,230,100,.8)"/>
-      <rect x="20" y="49" width="8" height="2.5" rx="1" fill="rgba(255,230,100,.8)"/>
-      <rect x="15" y="5" width="4" height="6" rx="1" fill="rgba(255,255,255,.12)"/>
-    </svg>`;
+function carSVG(color) {
+  const c = color || '#6aaa50';
+  return `<svg class="car" viewBox="0 0 34 58" xmlns="http://www.w3.org/2000/svg">
+    <rect x="5" y="10" width="24" height="36" rx="4" fill="${c}" opacity=".75"/>
+    <path d="M9 10 L11 4 L23 4 L25 10z" fill="${c}" opacity=".85"/>
+    <path d="M9 46 L11 54 L23 54 L25 46z" fill="${c}" opacity=".75"/>
+    <rect x="9" y="5" width="16" height="7" rx="1" fill="rgba(180,220,255,.35)"/>
+    <rect x="9" y="46" width="16" height="6" rx="1" fill="rgba(150,150,150,.25)"/>
+    <rect x="3" y="12" width="5" height="9" rx="2" fill="#1a1a1a"/>
+    <rect x="26" y="12" width="5" height="9" rx="2" fill="#1a1a1a"/>
+    <rect x="3" y="37" width="5" height="9" rx="2" fill="#1a1a1a"/>
+    <rect x="26" y="37" width="5" height="9" rx="2" fill="#1a1a1a"/>
+    <rect x="6" y="7" width="8" height="2.5" rx="1" fill="rgba(255,60,60,.7)"/>
+    <rect x="20" y="7" width="8" height="2.5" rx="1" fill="rgba(255,60,60,.7)"/>
+    <rect x="6" y="49" width="8" height="2.5" rx="1" fill="rgba(255,230,100,.8)"/>
+    <rect x="20" y="49" width="8" height="2.5" rx="1" fill="rgba(255,230,100,.8)"/>
+    <rect x="15" y="5" width="4" height="6" rx="1" fill="rgba(255,255,255,.12)"/>
+  </svg>`;
 }
 
 function buildMap() {
@@ -180,7 +195,55 @@ function buildMap() {
         }
     });
 
-    updateStats();
+    wrap.appendChild(row);
+    g.appendChild(wrap);
+
+    rowCount++;
+    if (rowCount % 2 === 0 && rowCount < zoneKeys.length) {
+      const aisle = document.createElement('div');
+      aisle.className = 'aisle';
+      g.appendChild(aisle);
+    }
+  });
+
+  updateStats();
+}
+
+// Build a single spot DOM element based on its DB status
+function buildSpotEl(spot) {
+  const status = spot.status; // 'available', 'reserved', 'occupied'
+
+  const el = document.createElement('div');
+  const cssClass = status === 'available' ? 'free'
+                 : status === 'reserved'  ? 'reserved'
+                 : 'taken';
+  el.className      = 'spot ' + cssClass;
+  el.dataset.id     = spot.id;
+  el.dataset.status = status;
+
+  const sb = document.createElement('div');
+  sb.className = 'spot-status';
+  sb.textContent = status === 'available' ? 'LIRË'
+                 : status === 'reserved'  ? 'RES'
+                 : '';
+  el.appendChild(sb);
+
+  if (status === 'occupied') {
+    el.innerHTML += carSVG('#6aaa50');
+  } else if (status === 'reserved') {
+    el.innerHTML += carSVG('#c8a830');
+    // Reserved spots are not clickable by others
+  } else {
+    // available — clickable
+    el.onclick = () => selectSpot(spot, el);
+  }
+
+  const num = document.createElement('div');
+  num.className = 'spot-num';
+  num.textContent = spot.id;
+  el.appendChild(num);
+
+  return el;
 }
 
 function selectSpot(spot, el) {
@@ -193,6 +256,11 @@ function selectSpot(spot, el) {
     selectedSpot = spot;
     el.classList.add('selected');
     updateSidebar();
+    return;
+  }
+  selectedSpot = spot;
+  el.classList.add('selected');
+  updateSidebar();
 }
 
 function updateSidebar() {
@@ -236,12 +304,12 @@ function fmtTime(d) {
 
 // Duration buttons
 document.getElementById('dur-row')?.addEventListener('click', e => {
-    const b = e.target.closest('.dur');
-    if (!b) return;
-    document.querySelectorAll('.dur').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    duration = parseInt(b.dataset.h);
-    updateSidebar();
+  const b = e.target.closest('.dur');
+  if (!b) return;
+  document.querySelectorAll('.dur').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  duration = parseInt(b.dataset.h);
+  updateSidebar();
 });
 
 // Update map stats counters
@@ -372,12 +440,11 @@ let position = 0;
 const itemWidth = 340; // card width (320) + gap (20)
 
 nextBtn?.addEventListener('click', () => {
-    if (position < maxScrolls) {
-        position++;
-        sliderTrack.style.transform = `translateX(-${position * itemWidth}px)`;
-    }
+  if (position < maxScrolls) {
+    position++;
+    sliderTrack.style.transform = `translateX(-${position * ITEM_W}px)`;
+  }
 });
-
 prevBtn?.addEventListener('click', () => {
     if (position > 0) {
         position--;
