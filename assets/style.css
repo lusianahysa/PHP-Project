@@ -621,6 +621,8 @@ footer { padding:72px 60px 36px; background:var(--dark); border-top:1px solid rg
   content:''; position:absolute; inset:0;
   border:1.5px solid rgba(120,200,80,.35); border-radius:2px; pointer-events:none;
 }
+.spot.reserved { background:#2a2600; border-color:rgba(200,168,48,.4); }
+.spot.reserved:hover { transform:none; cursor:default; }
 .spot.reserved::after {
   content:''; position:absolute; inset:0;
   border:1.5px solid rgba(200,170,50,.4); border-radius:2px; pointer-events:none;

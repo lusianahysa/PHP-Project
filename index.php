@@ -576,6 +576,12 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
                 </div>
               </div>
 
+            <div class="sb-section">
+              <div class="stat-row">
+                <div class="stat"><div class="stat-n g" id="cnt-f">0</div><div class="stat-l">I LIRË</div></div>
+                <div class="stat"><div class="stat-n y" id="cnt-r">0</div><div class="stat-l">REZERVUAR</div></div>
+                <div class="stat"><div class="stat-n r" id="cnt-t">0</div><div class="stat-l">I ZËNË</div></div>
+              </div>
             </div>
           </div>
 
@@ -661,6 +667,16 @@ $occupied_spots = count(array_filter($db_spots, fn($s) => $s['status'] === 'occu
       </div>
 
     </main>
+  </div>
+
+  <!-- ── PAYPAL PAYMENT MODAL ── -->
+  <div class="pp-overlay" id="ppOverlay">
+    <div class="pp-modal">
+      <button class="pp-close" id="ppClose"><i class="fa-solid fa-xmark"></i></button>
+      <div class="pp-header">
+        <div class="pp-logo"><i class="fa-solid fa-gem"></i> PARKSTER</div>
+        <div class="pp-title">Konfirmo Rezervimin</div>
+      </div>
 
   </div>
 
